@@ -99,6 +99,6 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## Contact
 
-Your Name - [@your_twitter](https://twitter.com/your_username) - your.email@example.com
+Hyacinthe Venceslas R. - [my_twitter](https://twitter.com/@Hrakotonaina) - rvhrakotonaina@gmail.com
 
-Project Link: [https://github.com/yourusername/inventory-management-system](https://github.com/yourusername/inventory-management-system)
+Project Link: [https://github.com/you/inventory-management-system](https://github.com/rvhrakotonaina-tech/inventory-management-system)
