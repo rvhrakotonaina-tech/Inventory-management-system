@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="mb-4">Sales</h2>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Sales</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Sale ID</th>
+                                <th>Product</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale in sales %}
+                            <tr>
+                                <td>{{ sale[0] }}</td>
+                                <td>{{ sale[1] }}</td>
+                                <td>{{ sale[2] }}</td>
+                                <td>${{ "%.2f"|format(sale[4]) }}</td>
+                                <td>{{ sale[3].strftime('%Y-%m-%d %H:%M') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Record New Sale</h5>
+            </div>
+            <div class="card-body">
+                <form id="recordSaleForm">
+                    <div class="mb-3">
+                        <label for="productSelect" class="form-label">Product</label>
+                        <select class="form-select" id="productSelect" required>
+                            <option value="">Select Product</option>
+                            {% for product in products %}
+                            <option value="{{ product[0] }}" data-price="{{ product[2] }}" data-quantity="{{ product[3] }}">
+                                {{ product[1] }} ({{ product[3] }} in stock) - ${{ "%.2f"|format(product[2]) }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="saleQuantity" class="form-label">Quantity</label>
+                        <input type="number" class="form-control" id="saleQuantity" min="1" value="1" required>
+                        <div class="form-text" id="availableStock"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Total</label>
+                        <div class="h4" id="saleTotal">$0.00</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-cash-register me-2"></i>Record Sale
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Update available stock and total when product changes
+document.getElementById('productSelect').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const price = parseFloat(selectedOption.dataset.price) || 0;
+    const maxQuantity = parseInt(selectedOption.dataset.quantity) || 0;
+    
+    document.getElementById('saleQuantity').max = maxQuantity;
+    document.getElementById('availableStock').textContent = `Available: ${maxQuantity}`;
+    
+    // Update total
+    updateTotal();
+});
+
+// Update total when quantity changes
+document.getElementById('saleQuantity').addEventListener('input', updateTotal);
+
+function updateTotal() {
+    const productSelect = document.getElementById('productSelect');
+    const quantity = parseInt(document.getElementById('saleQuantity').value) || 0;
+    const price = parseFloat(productSelect.options[productSelect.selectedIndex]?.dataset.price) || 0;
+    const total = (price * quantity).toFixed(2);
+    document.getElementById('saleTotal').textContent = `$${total}`;
+}
+
+// Handle form submission
+document.getElementById('recordSaleForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const productId = document.getElementById('productSelect').value;
+    const quantity = document.getElementById('saleQuantity').value;
+    
+    if (!productId) {
+        alert('Please select a product');
+        return;
+    }
+    
+    fetch('/api/sales', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            product_id: productId,
+            quantity: quantity
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.reload();
+        } else {
+            alert('Error recording sale: ' + (data.message || 'Unknown error'));
+        }
+    });
+});
+</script>
+{% endblock %}

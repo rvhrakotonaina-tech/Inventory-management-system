@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2>Dashboard</h2>
+        <p class="text-muted">Overview of your inventory and sales</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Summary Cards -->
+    <div class="col-md-3 mb-4">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase">Total Products</h6>
+                        <h2 id="totalProducts">0</h2>
+                    </div>
+                    <i class="fas fa-box fa-3x opacity-50"></i>
+                </div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a class="small text-white stretched-link" href="{{ url_for('products') }}">View Products</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase">Total Sales (Today)</h6>
+                        <h2 id="todaySales">$0.00</h2>
+                    </div>
+                    <i class="fas fa-shopping-cart fa-3x opacity-50"></i>
+                </div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a class="small text-white stretched-link" href="{{ url_for('sales') }}">View Sales</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-warning text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase">Low Stock Items</h6>
+                        <h2 id="lowStockCount">0</h2>
+                    </div>
+                    <i class="fas fa-exclamation-triangle fa-3x opacity-50"></i>
+                </div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a class="small text-white stretched-link" href="{{ url_for('products') }}?filter=low_stock">View Items</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-uppercase">Total Suppliers</h6>
+                        <h2 id="totalSuppliers">0</h2>
+                    </div>
+                    <i class="fas fa-truck fa-3x opacity-50"></i>
+                </div>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a class="small text-white stretched-link" href="{{ url_for('suppliers') }}">View Suppliers</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Sales -->
+    <div class="col-md-8 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Sales</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="recentSalesTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Product</th>
+                                <th>Qty</th>
+                                <th>Amount</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Low Stock Items -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Low Stock Alert</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush" id="lowStockItems">
+                    <!-- Will be populated by JavaScript -->
+                    <div class="text-center py-4 text-muted">
+                        <i class="fas fa-check-circle fa-2x mb-2"></i>
+                        <p>All items are well stocked</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load dashboard data when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    fetchDashboardData();
+});
+
+function fetchDashboardData() {
+    // Fetch summary data
+    fetch('/api/dashboard/summary')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('totalProducts').textContent = data.total_products || 0;
+            document.getElementById('todaySales').textContent = '$' + (data.today_sales || '0.00');
+            document.getElementById('lowStockCount').textContent = data.low_stock_count || 0;
+            document.getElementById('totalSuppliers').textContent = data.total_suppliers || 0;
+            
+            // Update recent sales
+            const salesTable = document.querySelector('#recentSalesTable tbody');
+            if (data.recent_sales && data.recent_sales.length > 0) {
+                salesTable.innerHTML = data.recent_sales.map(sale => `
+                    <tr>
+                        <td>${sale.sale_id}</td>
+                        <td>${sale.product_name}</td>
+                        <td>${sale.quantity_sold}</td>
+                        <td>$${parseFloat(sale.total_amount).toFixed(2)}</td>
+                        <td>${new Date(sale.sale_date).toLocaleTimeString()}</td>
+                    </tr>
+                `).join('');
+            }
+            
+            // Update low stock items
+            const lowStockContainer = document.getElementById('lowStockItems');
+            if (data.low_stock_items && data.low_stock_items.length > 0) {
+                lowStockContainer.innerHTML = data.low_stock_items.map(item => `
+                    <a href="${window.location.origin}/products" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">${item.name}</h6>
+                            <small class="text-danger">${item.quantity} left</small>
+                        </div>
+                        <small class="text-muted">Reorder at ${item.reorder_level} units</small>
+                    </a>
+                `).join('');
+            }
+        });
+}
+</script>
+{% endblock %}
